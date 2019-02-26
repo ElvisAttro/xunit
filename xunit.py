@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-class TestCase:
+class WasRun:
     def __init__(self):
         self.wasRun = False
 
     def testMethod(self):
         self.wasRun = True
 
-test = TestCase()
+    def run(self):
+        self.testMethod()
+
+
+test = WasRun()
 print(test.wasRun)
-test.testMethod()
+test.run()
 print(test.wasRun)
