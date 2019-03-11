@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 class WasRun:
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.wasRun = False
 
     def testMethod(self):
@@ -12,7 +13,7 @@ class WasRun:
         self.testMethod()
 
 
-test = WasRun()
+test = WasRun("testMethod")
 print(test.wasRun)
 test.run()
 print(test.wasRun)
