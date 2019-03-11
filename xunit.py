@@ -10,7 +10,8 @@ class WasRun:
         self.wasRun = True
 
     def run(self):
-        self.testMethod()
+        testMethod = getattr(self, self.name)
+        testMethod()
 
 
 test = WasRun("testMethod")
