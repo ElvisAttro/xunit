@@ -18,10 +18,13 @@ class WasRun(TestCase):
     def testMethod(self):
         self.wasRun = True
 
+
+class TestCaseTest(TestCase):
     def testRunning(self):
         test = WasRun("testMethod")
         assert(not test.wasRun)
         test.run()
         assert(test.wasRun)
 
-WasRun("testRunning").run()
+
+TestCaseTest("testRunning").run()
