@@ -8,7 +8,7 @@ class TestCase:
 
     def setUpTemplate(self):
         self.setUp()
-        self.wasSetUp = True
+        self.log = "Setup()"
 
     def setUp(self):
         pass
@@ -17,14 +17,15 @@ class TestCase:
         self.setUpTemplate()
         method = getattr(self, self.methodName)
         method()
+        self.log = self.log + "-Running()"
 
 class WasRun(TestCase):
     def setUp(self):
         self.wasRun = False
-        self.wasSetUp = False
 
     def testMethod(self):
         self.wasRun = True
+
 
 class TestCaseTest(TestCase):
     def setUp(self):
@@ -32,12 +33,7 @@ class TestCaseTest(TestCase):
 
     def testRunning(self):
         self.test.run()
-        assert(self.test.wasRun)
-
-    def testSetUp(self):
-        self.test.run()
-        assert(self.test.wasSetUp)
+        assert(self.test.log == "Setup()-Running()")
 
 
-TestCaseTest("testSetUp").run()
 TestCaseTest("testRunning").run()
