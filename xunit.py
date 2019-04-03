@@ -13,11 +13,20 @@ class TestCase:
     def setUp(self):
         pass
 
+    def tearDownTemplate(self):
+        self.tearDown()
+        self.log = self.log + "-TearDown()"
+
+    def tearDown(self):
+        pass
+
     def run(self):
         self.setUpTemplate()
         method = getattr(self, self.methodName)
         method()
         self.log = self.log + "-Running()"
+        self.tearDownTemplate()
+
 
 class WasRun(TestCase):
     def setUp(self):
@@ -33,7 +42,7 @@ class TestCaseTest(TestCase):
 
     def testRunning(self):
         self.test.run()
-        assert(self.test.log == "Setup()-Running()")
+        assert(self.test.log == "Setup()-Running()-TearDown()")
 
 
 TestCaseTest("testRunning").run()
