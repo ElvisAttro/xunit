@@ -6,6 +6,12 @@ class TestCase:
     def __init__(self, name):
         self.methodName = name
 
+    def run(self):
+        self.setUpTemplate()
+        results = self.executeTestMethod(self.methodName)
+        self.tearDownTemplate()
+        return results
+
     def setUpTemplate(self):
         self.setUp()
         self.log = "Setup()"
@@ -20,17 +26,15 @@ class TestCase:
     def tearDown(self):
         pass
 
-    def run(self):
+    def executeTestMethod(self, name):
         results = TestResults()
-        self.setUpTemplate()
-        method = getattr(self, self.methodName)
+        method = getattr(self, name)
         try:
             method()
         except(AssertionError):
-            results.failCount += 1
-        results.testCount += 1
+            results.collectTestFailure()
+        results.collectTestExecution()
         self.log = self.log + "-Running()"
-        self.tearDownTemplate()
         return results
 
     def reportResults(self):
@@ -43,9 +47,15 @@ class TestResults():
         self.testCount = 0
         self.failCount = 0
 
+    def collectTestExecution(self):
+        self.testCount += 1
+
+    def collectTestFailure(self):
+        self.failCount += 1
+
     def resultsSummary(self):
         status = "FAILURE" if self.failCount > 0 else "OK"
-        return "{}. {} Run, {} Failled.".format(
+        return "{}. {} Run, {} Failed.".format(
             status, self.testCount, self.failCount)
 
 
@@ -65,15 +75,10 @@ class TestCaseTest(TestCase):
         self.test.run()
         assert(self.test.log == "Setup()-Running()-TearDown()")
 
-    def testPassingResults(self):
-        results = self.test.run()
-        assert("OK. 1 Run, 0 Failled." == results.resultsSummary())
-
     def testFaillingResults(self):
-        results = self.test.run()
-        assert("FAILURE. 1 Run, 1 Failled." == results.resultsSummary())
+        self.test.run()
+        assert(self.test.wasRun is False)
 
 
 TestCaseTest("testRunning").reportResults()
-TestCaseTest("testPassingResults").reportResults()
 TestCaseTest("testFaillingResults").reportResults()
