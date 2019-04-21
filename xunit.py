@@ -7,10 +7,16 @@ class TestCase:
         self.methodName = name
 
     def run(self):
-        self.setUpTemplate()
-        results = self.executeTestMethod(self.methodName)
-        self.tearDownTemplate()
-        return results
+        results = TestResults()
+        try:
+            self.setUpTemplate()
+        except:
+            results.collectTestError()
+        else:
+            results = self.executeTestMethod(self.methodName)
+            self.tearDownTemplate()
+        finally:
+            return results
 
     def setUpTemplate(self):
         self.setUp()
@@ -46,6 +52,7 @@ class TestResults():
     def __init__(self):
         self.testCount = 0
         self.failCount = 0
+        self.errorCount = 0
 
     def collectTestExecution(self):
         self.testCount += 1
@@ -53,10 +60,13 @@ class TestResults():
     def collectTestFailure(self):
         self.failCount += 1
 
+    def collectTestError(self):
+        self.errorCount += 1
+
     def resultsSummary(self):
-        status = "FAILURE" if self.failCount > 0 else "OK"
-        return "{}. {} Run, {} Failed.".format(
-            status, self.testCount, self.failCount)
+        status = "ERROR" if self.errorCount > 0 else "FAILURE" if self.failCount > 0 else "OK"
+        return "{}. {} Ran, {} Failed, {} Error(s).".format(
+            status, self.testCount, self.failCount, self.errorCount)
 
 
 class WasRun(TestCase):
@@ -74,11 +84,21 @@ class TestCaseTest(TestCase):
     def testRunning(self):
         self.test.run()
         assert(self.test.log == "Setup()-Running()-TearDown()")
+        assert(self.test.wasRun is True)
 
     def testFaillingResults(self):
         self.test.run()
         assert(self.test.wasRun is False)
 
+class SetUpExceptionTest(TestCase):
+    def setUp(self):
+        self.test = WasRun("testMethod")
+        raise Exception
+
+    def testRunningSequence(self):
+        pass
+
 
 TestCaseTest("testRunning").reportResults()
 TestCaseTest("testFaillingResults").reportResults()
+SetUpExceptionTest("testRunningSequence").reportResults()
