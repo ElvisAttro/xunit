@@ -5,18 +5,16 @@
 class TestCase:
     def __init__(self, name):
         self.methodName = name
+        self.results = TestResults()
 
     def run(self):
-        results = TestResults()
         try:
             self.setUpTemplate()
-        except:
-            results.collectTestError()
+        except Exception:
+            self.results.collectTestError()
         else:
-            results = self.executeTestMethod(self.methodName)
+            self.executeTestMethod(self.methodName)
             self.tearDownTemplate()
-        finally:
-            return results
 
     def setUpTemplate(self):
         self.setUp()
@@ -26,26 +24,27 @@ class TestCase:
         pass
 
     def tearDownTemplate(self):
-        self.tearDown()
+        try:
+            self.tearDown()
+        except Exception:
+            self.results.collectTestError()
         self.log = self.log + "-TearDown()"
 
     def tearDown(self):
         pass
 
     def executeTestMethod(self, name):
-        results = TestResults()
         method = getattr(self, name)
         try:
             method()
-        except(AssertionError):
-            results.collectTestFailure()
-        results.collectTestExecution()
+        except AssertionError:
+            self.results.collectTestFailure()
+        self.results.collectTestExecution()
         self.log = self.log + "-Running()"
-        return results
 
     def reportResults(self):
-        results = self.run()
-        print(results.resultsSummary())
+        self.run()
+        print(self.results.resultsSummary())
 
 
 class TestResults():
@@ -90,6 +89,7 @@ class TestCaseTest(TestCase):
         self.test.run()
         assert(self.test.wasRun is False)
 
+
 class SetUpExceptionTest(TestCase):
     def setUp(self):
         self.test = WasRun("testMethod")
@@ -99,6 +99,19 @@ class SetUpExceptionTest(TestCase):
         pass
 
 
+class TearDownExceptionTest(TestCase):
+    def setUp(self):
+        self.test = WasRun("testMethod")
+
+    def tearDown(self):
+        raise Exception
+
+    def testRunning(self):
+        self.test.run()
+        assert(self.test.wasRun is True)
+
+
 TestCaseTest("testRunning").reportResults()
 TestCaseTest("testFaillingResults").reportResults()
 SetUpExceptionTest("testRunningSequence").reportResults()
+TearDownExceptionTest("testRunning").reportResults()
