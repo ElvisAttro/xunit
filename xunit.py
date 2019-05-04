@@ -8,10 +8,12 @@ class TestCase:
         self.results = TestResults()
 
     def run(self):
+        self.results.collectTestExecution()
         try:
             self.setUpTemplate()
-        except Exception:
+        except Exception as e:
             self.results.collectTestError()
+            return e
         else:
             self.executeTestMethod(self.methodName)
             self.tearDownTemplate()
@@ -26,20 +28,23 @@ class TestCase:
     def tearDownTemplate(self):
         try:
             self.tearDown()
-        except Exception:
+        except Exception as e:
             self.results.collectTestError()
+            return e
         self.log = self.log + "-TearDown()"
 
     def tearDown(self):
         pass
 
     def executeTestMethod(self, name):
-        method = getattr(self, name)
         try:
+            method = getattr(self, name)
             method()
         except AssertionError:
             self.results.collectTestFailure()
-        self.results.collectTestExecution()
+        except Exception as e:
+            self.results.collectTestError()
+            return e
         self.log = self.log + "-Running()"
 
     def reportResults(self):
@@ -114,4 +119,4 @@ class TearDownExceptionTest(TestCase):
 TestCaseTest("testRunning").reportResults()
 TestCaseTest("testFaillingResults").reportResults()
 SetUpExceptionTest("testRunningSequence").reportResults()
-TearDownExceptionTest("testRunning").reportResults()
+TearDownExceptionTest("testRunningi").reportResults()
