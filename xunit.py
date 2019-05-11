@@ -73,6 +73,17 @@ class TestResults():
         self.troublesStack.append(("ERROR", invoker, e))
         self.errorCount += 1
 
+    def mergeResultsWith(self, results):
+        if results is None or self.__class__ != results.__class__:
+            return None
+
+        tr = TestResults()
+        tr.testCount = self.testCount + results.testCount
+        tr.failCount = self.failCount + results.failCount
+        tr.errorCount = self.errorCount + results.errorCount
+        tr.troublesStack = self.troublesStack + results.troublesStack
+        return tr
+
     def resultsSummary(self):
         status = "ERROR" if self.errorCount > 0 else "FAILURE" if self.failCount > 0 else "OK"
         return "{}. {} Ran, {} Failed, {} Error(s).".format(
@@ -94,6 +105,7 @@ class TestResultsReporter():
         print("-"*50)
         print(summary)
         print()
+
 
 
 class WasRun(TestCase):
@@ -139,7 +151,23 @@ class TearDownExceptionTest(TestCase):
         assert(self.test.wasRun is True)
 
 
-TestCaseTest("testRunning").reportResults()
-TestCaseTest("testFaillingResults").reportResults()
-SetUpExceptionTest("testRunningSequence").reportResults()
-TearDownExceptionTest("testRunningi").reportResults()
+class TestResultsCaseTest(TestCase):
+    def testMergeValidResults(self):
+        tr1 = TestResults()
+        tr1.collectTestExecution()
+        tr1.collectTestFailure(self.__class__.__name__, traceback.format_exc())
+
+        tr2 = TestResults()
+        tr2.collectTestExecution()
+        tr2.collectTestError(self.__class__.__name__, traceback.format_exc())
+
+        tr = tr1.mergeResultsWith(tr2)
+        assert (tr.resultsSummary() == "ERROR. 2 Ran, 1 Failed, 1 Error(s).")
+
+    def testMergeWithNone(self):
+        tr = TestResults().mergeResultsWith(None)
+        assert tr is None
+
+
+TestResultsCaseTest("testMergeValidResults").reportResults()
+TestResultsCaseTest("testMergeWithNone").reportResults()
