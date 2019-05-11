@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import traceback
 
 class TestCase:
     def __init__(self, name):
@@ -12,7 +13,7 @@ class TestCase:
         try:
             self.setUpTemplate()
         except Exception as e:
-            self.results.collectTestError()
+            self.results.collectTestError(self.__class__.__name__,traceback.format_exc())
             return e
         else:
             self.executeTestMethod(self.methodName)
@@ -29,7 +30,7 @@ class TestCase:
         try:
             self.tearDown()
         except Exception as e:
-            self.results.collectTestError()
+            self.results.collectTestError(self.__class__.__name__,traceback.format_exc())
             return e
         self.log = self.log + "-TearDown()"
 
@@ -40,16 +41,18 @@ class TestCase:
         try:
             method = getattr(self, name)
             method()
-        except AssertionError:
-            self.results.collectTestFailure()
+        except AssertionError as e:
+            self.results.collectTestFailure(self.__class__.__name__, traceback.format_exc())
+            return e
         except Exception as e:
-            self.results.collectTestError()
+            self.results.collectTestError(self.__class__.__name__, traceback.format_exc())
             return e
         self.log = self.log + "-Running()"
 
     def reportResults(self):
+        reporter = TestResultsReporter()
         self.run()
-        print(self.results.resultsSummary())
+        reporter.reportResults(self.results)
 
 
 class TestResults():
@@ -57,20 +60,40 @@ class TestResults():
         self.testCount = 0
         self.failCount = 0
         self.errorCount = 0
+        self.troublesStack= []
 
     def collectTestExecution(self):
         self.testCount += 1
 
-    def collectTestFailure(self):
+    def collectTestFailure(self, invoker, e):
+        self.troublesStack.append(("FAIL", invoker, e))
         self.failCount += 1
 
-    def collectTestError(self):
+    def collectTestError(self,invoker, e):
+        self.troublesStack.append(("ERROR", invoker, e))
         self.errorCount += 1
 
     def resultsSummary(self):
         status = "ERROR" if self.errorCount > 0 else "FAILURE" if self.failCount > 0 else "OK"
         return "{}. {} Ran, {} Failed, {} Error(s).".format(
             status, self.testCount, self.failCount, self.errorCount)
+
+class TestResultsReporter():
+    def reportResults(self,testResults):
+        for trouble in testResults.troublesStack:
+            self.reportTrouble(trouble)
+        self.reportSummary(testResults.resultsSummary())
+
+    def reportTrouble(self, trouble):
+        print("="*50)
+        print("{}: {}".format(trouble[0], trouble[1]))
+        print("-"*50)
+        print(trouble[2])
+
+    def reportSummary(self, summary):
+        print("-"*50)
+        print(summary)
+        print()
 
 
 class WasRun(TestCase):
