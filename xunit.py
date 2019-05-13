@@ -3,7 +3,7 @@
 
 import traceback
 
-class TestCase:
+class TestCase():
     def __init__(self, name):
         self.methodName = name
         self.results = TestResults()
@@ -107,6 +107,22 @@ class TestResultsReporter():
         print()
 
 
+class TestSuite(TestCase):
+    def __init__(self):
+        self.tests = []
+        super().__init__(self)
+
+    def add(self, *args):
+        self.tests +=  args
+
+    def run(self):
+        for case in self.tests:
+            case.run()
+            self.results = self.results.mergeResultsWith(case.results)
+
+    def resultsSummary(self):
+        return self.results.resultsSummary()
+
 
 class WasRun(TestCase):
     def setUp(self):
@@ -169,5 +185,28 @@ class TestResultsCaseTest(TestCase):
         assert tr is None
 
 
-TestResultsCaseTest("testMergeValidResults").reportResults()
-TestResultsCaseTest("testMergeWithNone").reportResults()
+class TestSuiteCaseTest(TestCase):
+    def testOneTestInSuite(self):
+        suite = TestSuite()
+        suite.add(TestCaseTest("testRunning"))
+        suite.run()
+        assert (suite.resultsSummary() == "OK. 1 Ran, 0 Failed, 0 Error(s).")
+
+    def testTwoTestsInSuite(self):
+        suite = TestSuite()
+        suite.add(TestCaseTest("testRunning"), TestCaseTest("testFaillingResults"))
+        suite.run()
+        assert (suite.resultsSummary() == "FAILURE. 2 Ran, 1 Failed, 0 Error(s).")
+
+    def testsAndSuitesInSuite(self):
+        suite, suite2, suite3 = TestSuite(), TestSuite(), TestSuite()
+        suite2.add(TestCaseTest("testRunningi"), SetUpExceptionTest("testRunningSequence"))
+        suite3.add(TestSuiteCaseTest("testOneTestInSuite"), TestSuiteCaseTest("testTwoTestsInSuite"))
+        suite.add(TestResultsCaseTest("testMergeValidResults"), TestResultsCaseTest("testMergeWithNone"), suite2, suite3)
+        suite.add(TearDownExceptionTest("testRunning"), TestCaseTest("testFaillingResults"))
+        #suite.add("lol")
+        suite.run()
+        assert (suite.resultsSummary() == "ERROR. 8 Ran, 1 Failed, 3 Error(s).")
+
+
+TestSuiteCaseTest("testsAndSuitesInSuite").reportResults()
